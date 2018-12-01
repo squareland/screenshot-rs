@@ -30,8 +30,8 @@ fn main() {
 
     // WARNING rust-bmp params are (width, height)
     let mut img = Image::new(s.width() as u32, s.height() as u32);
-    for row in (0..s.height()) {
-        for col in (0..s.width()) {
+    for row in 0..s.height() {
+        for col in 0..s.width() {
             let p = s.get_pixel(row, col);
             // WARNING rust-bmp params are (x, y)
             img.set_pixel(
