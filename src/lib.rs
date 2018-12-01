@@ -336,15 +336,16 @@ mod ffi {
 
     /// TODO Support multiple screens
     /// This may never happen, given the horrific quality of Win32 APIs
-    pub fn get_screenshot(_screen: usize) -> ScreenResult {
-        //        use std::ptr::null;
+    pub fn get_screenshot(screen: usize) -> ScreenResult {
+        use std::ptr::null_mut;
         unsafe {
+            let monitor = enumerate_monitors()
+                .into_iter()
+                .nth(screen)
+                .ok_or("failed to get specified screen")?;
             // Enumerate monitors, getting a handle and DC for requested monitor.
             // loljk, because doing that on Windows is worse than death
-            let h_wnd_screen = winuser::GetDesktopWindow();
-            let h_dc_screen = winuser::GetDC(h_wnd_screen);
-            let width = winuser::GetSystemMetrics(winuser::SM_CXSCREEN);
-            let height = winuser::GetSystemMetrics(winuser::SM_CYSCREEN);
+            let h_dc_screen = winuser::GetDC(null_mut());
 
             // Create a Windows Bitmap, and copy the bits into it
             let h_dc = wingdi::CreateCompatibleDC(h_dc_screen);
@@ -352,7 +353,7 @@ mod ffi {
                 return Err("Can't get a Windows display.");
             }
 
-            let h_bmp = wingdi::CreateCompatibleBitmap(h_dc_screen, width, height);
+            let h_bmp = wingdi::CreateCompatibleBitmap(h_dc_screen, monitor.width, monitor.height);
             if h_bmp.is_null() {
                 return Err("Can't create a Windows buffer");
             }
@@ -366,11 +367,11 @@ mod ffi {
                 h_dc,
                 0,
                 0,
-                width,
-                height,
+                monitor.width,
+                monitor.height,
                 h_dc_screen,
-                0,
-                0,
+                monitor.left,
+                monitor.top,
                 wingdi::SRCCOPY | wingdi::CAPTUREBLT,
             );
             if res == 0 {
@@ -383,12 +384,12 @@ mod ffi {
             let mut bmi = wingdi::BITMAPINFO {
                 bmiHeader: wingdi::BITMAPINFOHEADER {
                     biSize: size_of::<wingdi::BITMAPINFOHEADER>() as minwindef::DWORD,
-                    biWidth: width as ntdef::LONG,
-                    biHeight: height as ntdef::LONG,
+                    biWidth: monitor.width as ntdef::LONG,
+                    biHeight: monitor.height as ntdef::LONG,
                     biPlanes: 1,
                     biBitCount: 8 * pixel_width as minwindef::WORD,
                     biCompression: wingdi::BI_RGB,
-                    biSizeImage: (width * height * pixel_width as minwindef::INT)
+                    biSizeImage: (monitor.width * monitor.height * pixel_width as minwindef::INT)
                         as minwindef::DWORD,
                     biXPelsPerMeter: 0,
                     biYPelsPerMeter: 0,
@@ -404,7 +405,7 @@ mod ffi {
             };
 
             // Create a Vec for image
-            let size: usize = (width * height) as usize * pixel_width;
+            let size: usize = (monitor.width * monitor.height) as usize * pixel_width;
             let mut data: Vec<u8> = Vec::with_capacity(size);
             data.set_len(size);
 
@@ -413,24 +414,28 @@ mod ffi {
                 h_dc,
                 h_bmp,
                 0,
-                height as minwindef::DWORD,
+                monitor.height as minwindef::DWORD,
                 &mut data[0] as *mut u8 as minwindef::LPVOID,
                 &mut bmi as wingdi::LPBITMAPINFO,
                 wingdi::DIB_RGB_COLORS,
             );
 
             // Release native image buffers
-            winuser::ReleaseDC(h_wnd_screen, h_dc_screen); // don't need screen anymore
+            winuser::ReleaseDC(null_mut(), h_dc_screen); // don't need screen anymore
             wingdi::DeleteDC(h_dc);
             wingdi::DeleteObject(h_bmp as windef::HGDIOBJ);
 
-            let data = flip_rows(data, height as usize, width as usize * pixel_width);
+            let data = flip_rows(
+                data,
+                monitor.height as usize,
+                monitor.width as usize * pixel_width,
+            );
 
             Ok(Screenshot {
                 data,
-                height: height as usize,
-                width: width as usize,
-                row_len: width as usize * pixel_width,
+                height: monitor.height as usize,
+                width: monitor.width as usize,
+                row_len: monitor.width as usize * pixel_width,
                 pixel_width,
             })
         }
