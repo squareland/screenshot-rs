@@ -435,6 +435,54 @@ mod ffi {
             })
         }
     }
+
+    struct Monitor {
+        left: i32,
+        top: i32,
+        height: i32,
+        width: i32,
+    }
+
+    fn enumerate_monitors() -> Vec<Monitor> {
+        use std::mem::transmute;
+        use std::ptr::{null, null_mut};
+
+        extern "system" fn callback(
+            _: windef::HMONITOR,
+            _: windef::HDC,
+            rect: windef::LPRECT,
+            lparam: minwindef::LPARAM,
+        ) -> minwindef::BOOL {
+            let refresult = unsafe { transmute::<minwindef::LPARAM, *mut Vec<Monitor>>(lparam) };
+            let refresult: &mut Vec<Monitor> = unsafe { &mut *refresult };
+
+            let monitor = unsafe {
+                Monitor {
+                    left: (*rect).left,
+                    top: (*rect).top,
+                    height: (*rect).bottom - (*rect).top,
+                    width: (*rect).right - (*rect).left,
+                }
+            };
+
+            refresult.push(monitor);
+
+            minwindef::TRUE
+        }
+
+        let mut result: Vec<Monitor> = Vec::new();
+
+        unsafe {
+            winuser::EnumDisplayMonitors(
+                null_mut::<*mut u8>() as windef::HDC,
+                null::<*const u8>() as windef::LPCRECT,
+                Some(callback),
+                transmute::<*mut Vec<Monitor>, minwindef::LPARAM>(&mut result),
+            );
+        }
+
+        result
+    }
 }
 
 #[test]
