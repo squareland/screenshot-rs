@@ -335,6 +335,22 @@ mod ffi {
         new_data
     }
 
+    /// Reorder bytes in one pixel, BGR to RGB.
+    fn flip_rgb(mut data: Vec<u8>, height: usize, width: usize, pixel_width: usize) -> Vec<u8> {
+        // FIXME support other pixel_width but when?
+        assert_eq!(pixel_width, 4);
+        let row_len = width * pixel_width;
+        for y in 0..height {
+            for x in 0..width {
+                data.swap(
+                    y * row_len + x * pixel_width,
+                    y * row_len + x * pixel_width + 2,
+                );
+            }
+        }
+        data
+    }
+
     /// TODO Support multiple screens
     /// This may never happen, given the horrific quality of Win32 APIs
     pub fn get_screenshot(screen: usize) -> ScreenResult {
@@ -434,6 +450,13 @@ mod ffi {
                 data,
                 monitor.height as usize,
                 monitor.width as usize * pixel_width,
+            );
+
+            let data = flip_rgb(
+                data,
+                monitor.height as usize,
+                monitor.width as usize,
+                pixel_width as usize,
             );
 
             shellscalingapi::SetProcessDpiAwareness(dpi_awareness);
