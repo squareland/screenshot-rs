@@ -313,6 +313,7 @@ mod ffi {
     use winapi::shared::minwindef;
     use winapi::shared::ntdef;
     use winapi::shared::windef;
+    use winapi::um::shellscalingapi;
     use winapi::um::wingdi;
     use winapi::um::winuser;
 
@@ -339,6 +340,10 @@ mod ffi {
     pub fn get_screenshot(screen: usize) -> ScreenResult {
         use std::ptr::null_mut;
         unsafe {
+            let mut dpi_awareness: shellscalingapi::PROCESS_DPI_AWARENESS = 0;
+            shellscalingapi::GetProcessDpiAwareness(null_mut(), &mut dpi_awareness);
+            shellscalingapi::SetProcessDpiAwareness(shellscalingapi::PROCESS_PER_MONITOR_DPI_AWARE);
+
             let monitor = enumerate_monitors()
                 .into_iter()
                 .nth(screen)
@@ -430,6 +435,8 @@ mod ffi {
                 monitor.height as usize,
                 monitor.width as usize * pixel_width,
             );
+
+            shellscalingapi::SetProcessDpiAwareness(dpi_awareness);
 
             Ok(Screenshot {
                 data,

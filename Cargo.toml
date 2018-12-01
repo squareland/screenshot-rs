@@ -19,7 +19,8 @@ libc = "*"
 
 [target.'cfg(windows)'.dependencies.winapi]
 version = "*"
-features = ["windef", "ntdef", "minwindef", "wingdi", "winuser"]
+features = ["windef", "ntdef", "minwindef", "wingdi", "winuser",
+         "shellscalingapi"]
 
 [dev-dependencies]
 bmp = "*"
