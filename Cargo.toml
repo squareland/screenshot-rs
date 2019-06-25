@@ -1,7 +1,7 @@
 [package]
 
 name = "screenshot"
-version = "0.0.8"
+version = "0.0.9"
 authors = ["Alex <alexchandel@gmail.com>"]
 description = "Get a bitmap image of any display."
 keywords = ["graphics", "image", "gui", "scripting"]
@@ -11,17 +11,19 @@ license = "CC0-1.0"
 
 [target.x86_64-unknown-linux-gnu.dependencies.xlib]
 git = "https://github.com/servo/rust-xlib"
+rev = "38ce24e62fbcca27976cb83c67eb5353fa00a882"
 [target.i686-unknown-linux-gnu.dependencies.xlib]
 git = "https://github.com/servo/rust-xlib"
+rev = "38ce24e62fbcca27976cb83c67eb5353fa00a882"
 
 [dependencies]
-libc = "*"
+libc = "0.2"
 
 [target.'cfg(windows)'.dependencies.winapi]
-version = "*"
+version = "0.3"
 features = ["windef", "ntdef", "minwindef", "wingdi", "winuser",
          "shellscalingapi"]
 
 [dev-dependencies]
-bmp = "*"
-image = "*"
+bmp = "0.4"
+image = "0.21"

@@ -102,7 +102,7 @@ impl Screenshot {
 
 impl AsRef<[u8]> for Screenshot {
     #[inline]
-    fn as_ref<'a>(&'a self) -> &'a [u8] {
+    fn as_ref(&self) -> &[u8] {
         self.data.as_slice()
     }
 }
@@ -132,7 +132,7 @@ mod ffi {
             let mut attr: XWindowAttributes = mem::uninitialized();
             XGetWindowAttributes(display, root, &mut attr);
 
-            let mut img = &mut *XGetImage(
+            let img = &mut *XGetImage(
                 display,
                 root,
                 0,
