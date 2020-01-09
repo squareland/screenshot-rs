@@ -118,7 +118,7 @@ mod ffi {
         XOpenDisplay, XRootWindowOfScreen, XScreenOfDisplay, XWindowAttributes, ZPixmap,
     };
     use libc::{c_int, c_uint};
-    use std::mem;
+    use std::mem::{self, MaybeUninit};
     use std::ptr::null_mut;
     use std::slice;
     use {ScreenResult, Screenshot};
@@ -129,8 +129,9 @@ mod ffi {
             let screen = XScreenOfDisplay(display, screen as c_int);
             let root = XRootWindowOfScreen(screen);
 
-            let mut attr: XWindowAttributes = mem::uninitialized();
-            XGetWindowAttributes(display, root, &mut attr);
+            let mut attr = MaybeUninit::<XWindowAttributes>::uninit();
+            XGetWindowAttributes(display, root, attr.as_mut_ptr());
+            let attr = attr.assume_init();
 
             let img = &mut *XGetImage(
                 display,
@@ -167,12 +168,10 @@ mod ffi {
             // Fix Alpha channel when xlib cannot retrieve info correctly
             let has_alpha = data.iter().enumerate().any(|(n, x)| n % 4 == 3 && *x != 0);
             if !has_alpha {
-                let mut n = 0;
-                for channel in &mut data {
+                for (n, channel) in data.iter_mut().enumerate() {
                     if n % 4 == 3 {
                         *channel = 255;
                     }
-                    n += 1;
                 }
             }
 
