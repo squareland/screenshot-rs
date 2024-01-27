@@ -21,8 +21,7 @@ libc = "0.2"
 
 [target.'cfg(windows)'.dependencies.winapi]
 version = "0.3"
-features = ["windef", "ntdef", "minwindef", "wingdi", "winuser",
-         "shellscalingapi"]
+features = ["windef", "ntdef", "minwindef", "wingdi", "winuser"]
 
 [dev-dependencies]
 bmp = "0.4"
