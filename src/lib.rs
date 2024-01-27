@@ -98,6 +98,10 @@ impl Screenshot {
             }
         }
     }
+
+    pub fn into_data(self) -> Vec<u8> {
+        self.data
+    }
 }
 
 impl AsRef<[u8]> for Screenshot {
